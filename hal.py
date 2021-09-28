@@ -1,5 +1,4 @@
-from random import seed
-from random import random
+import random as rand
 
 
 class GameAI:
@@ -7,4 +6,6 @@ class GameAI:
         pass
 
     def random_move(self):
-        pass
+        move_digit = rand.randrange(1, 9)
+
+        return str(move_digit)
