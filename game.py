@@ -90,6 +90,31 @@ class Game:
 
         return is_valid
 
+    def is_valid(self, move):
+        is_valid = True
+        if move == '1' and self.game_state[2][0] == '-':
+            pass
+        elif move == '2' and self.game_state[2][1] == '-':
+            pass
+        elif move == '3' and self.game_state[2][2] == '-':
+            pass
+        elif move == '4' and self.game_state[1][0] == '-':
+            pass
+        elif move == '5' and self.game_state[1][1] == '-':
+            pass
+        elif move == '6' and self.game_state[1][2] == '-':
+            pass
+        elif move == '7' and self.game_state[0][0] == '-':
+            pass
+        elif move == '8' and self.game_state[0][1] == '-':
+            pass
+        elif move == '9' and self.game_state[0][2] == '-':
+            pass
+        else:
+            is_valid = False
+
+        return is_valid
+
     def print_board(self):
         for row in self.game_state:
             print(row)
