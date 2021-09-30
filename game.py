@@ -51,7 +51,7 @@ class Game:
         if solved:
             print("Player wins!")
             exit()
-    
+
     def ai_move(self, piece):
         valid = False
         while not valid:
@@ -153,6 +153,15 @@ class Game:
         first = self.game_state[0][2]
         if first == self.game_state[1][1] and first == self.game_state[0][2] and first != '-':
             solved = True
+            return solved
+
+        solved = True
+        for row in self.game_state:
+            for col in row:
+                if col is '-':
+                    return False
+
+        if solved:
             return solved
 
         solved = False
