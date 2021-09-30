@@ -1,11 +1,15 @@
 import random as rand
 import numpy as np
 import math
+import time
 
 
 class MCNode:
-    def __init__(self, state, ptr):
+    def __init__(self, state, ptr, piece, move=None):
         self.ptr = ptr
+        self.state = state
+        self.move = move
+        self.piece = piece
         self.wins = 0
         self.sims = 0
         self.successors = []
@@ -13,17 +17,18 @@ class MCNode:
 
 class GameAI:
     def __init__(self, state0, piece):
-        self.root = MCNode(state0, None)
+        self.root = MCNode(state0, None, piece)
         self.piece = piece
+        self.current = self.root
+        self.is_draw = False
 
     def expand_node(self, node):
         moves = self.get_legal_ops(node)
         for move in moves:
-            state = self.sim_action(str(move), node.state)
-            node.successors.append(self.create_successor(node, state))
+            state = self.sim_action(str(move), node.state, node.piece)
+            node.successors.append(self.create_successor(node, state, move))
 
-    def sim_action(self, move, state):
-        piece = self.piece
+    def sim_action(self, move, state, piece):
         if move == '1' and state[2][0] == '-':
             state[2][0] = piece
         elif move == '2' and state[2][1] == '-':
@@ -45,14 +50,22 @@ class GameAI:
 
         return state
 
-    @staticmethod
-    def create_successor(node, state):
-        child = MCNode(state, node)
+    def create_successor(self, node, state, move):
+        piece = self.swap_piece(node)
+        child = MCNode(state, node, piece, str(move))
         return child
 
     @staticmethod
+    def swap_piece(node):
+        piece = node.piece
+        if piece is 'x':
+            return 'o'
+        elif piece is 'o':
+            return 'x'
+
+    @staticmethod
     def is_leaf(node):
-        if node.successors:
+        if len(node.successors) > 0:
             return False
         else:
             return True
@@ -61,6 +74,7 @@ class GameAI:
         leaf = node
         while not self.is_leaf(leaf):
             leaf = self.selection_policy(node.successors)
+        self.current = leaf
         return leaf
 
     @staticmethod
@@ -84,6 +98,9 @@ class GameAI:
         moves = []
         legal_ops = []
 
+        for i in range(9):
+            moves.append(False)
+
         if state[2][0] == '-':
             moves[0] = True
         if state[2][1] == '-':
@@ -103,15 +120,15 @@ class GameAI:
         if state[0][2] == '-':
             moves[8] = True
 
-        for i in range(moves):
+        for i in range(len(moves)):
             if moves[i] is True:
-                legal_ops.append(str(moves[i].index() + 1))
+                legal_ops.append(str(i + 1))
 
         return legal_ops
 
     def rollout(self, node):
         rolling_node = node
-        while not self.is_solved(rolling_node):
+        while not self.is_solved(rolling_node.state):
             rolling_node = self.rollout_policy(rolling_node)
         terminal = rolling_node
         return terminal
@@ -119,18 +136,48 @@ class GameAI:
     def rollout_policy(self, node):
         if not node.successors:
             self.expand_node(node)
-        length = node.successors.len()
-        rolling_node = node.successors[np.rand.randrange[length]]
+        length = len(node.successors)
+        random_index = rand.randrange(length)
+        rolling_node = node.successors[random_index]
         return rolling_node
 
-    def backprop(self):
-        pass
+    def backprop(self, terminal):
+        self.current.sims += 1
 
-    def search(self, root):
+        if self.is_draw:
+            self.current.wins += 1
+        elif terminal.piece == self.piece:
+            self.current.wins += 2
+
+        self.is_draw = False
+
+        parent = self.current.ptr
+        child = self.current
+
+        print("parent node: ", parent)
+
+        while parent.ptr is not None:
+            parent.sims += 1
+            parent.wins += child.wins
+            child = parent
+            parent = child.ptr
+
+    def search(self, state, piece):
         # while constraint not met
-        leaf = self.selection(root)
-        sim_result = self.rollout(leaf)
-        self.backprop(sim_result)
+        root = MCNode(state, None, piece)
+        i = 0
+        while i < 1000:
+            leaf = self.selection(root)
+            sim_result = self.rollout(leaf)
+            self.backprop(sim_result)
+            i += 1
+
+        scores = []
+        for node in root.successors:
+            scores.append(node.win / node.sims)
+        hi_score = max(scores)
+
+        return root.successors[scores.index(hi_score)].move
 
     @staticmethod
     def get_path(final_node):
@@ -143,8 +190,7 @@ class GameAI:
 
         return the_path
 
-    @staticmethod
-    def is_solved(state):
+    def is_solved(self, state):
         # Horizontals
         for row in state:
             solved = True
@@ -187,6 +233,7 @@ class GameAI:
                     return False
 
         if solved:
+            self.is_draw = True
             return solved
 
         solved = False

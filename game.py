@@ -7,7 +7,8 @@ class Game:
         self.cols = 3
         self.game_state = []
         self.init_board()
-        self.computer = hal.GameAI()
+        self.computer = None
+        self.is_draw = False
 
     def init_board(self):
         for row in range(self.rows):
@@ -32,10 +33,13 @@ class Game:
 
     def play_game(self, start_player):
         if start_player == '1':
+            self.player_move('x')
+            self.computer = hal.GameAI(self.game_state, 'o')
             while True:
-                self.player_move('x')
                 self.ai_move('o')
+                self.player_move('x')
         elif start_player == '2':
+            self.computer = hal.GameAI(self.game_state, 'x')
             while True:
                 self.ai_move('x')
                 self.player_move('o')
@@ -49,10 +53,15 @@ class Game:
         self.print_board()
         solved = self.is_solved()
         if solved:
+            if self.is_draw:
+                print("Cat's game!")
+                exit()
             print("Player wins!")
             exit()
 
-    def ai_move(self, piece):
+    # random AI move
+    '''
+        def ai_move(self, piece):
         valid = False
         while not valid:
             print("computer moving...")
@@ -62,6 +71,26 @@ class Game:
         self.print_board()
         solved = self.is_solved()
         if solved:
+            if self.is_draw:
+                print("Cat's game!")
+                exit()
+            print("Computer wins!")
+            exit()
+    '''
+    # Actual AI move
+    def ai_move(self, piece):
+        valid = False
+        while not valid:
+            print("computer moving...")
+            space = self.computer.search(self.game_state, piece)
+            valid = self.place_piece(space, piece)
+
+        self.print_board()
+        solved = self.is_solved()
+        if solved:
+            if self.is_draw:
+                print("Cat's game!")
+                exit()
             print("Computer wins!")
             exit()
 
@@ -162,6 +191,7 @@ class Game:
                     return False
 
         if solved:
+            self.is_draw = True
             return solved
 
         solved = False
