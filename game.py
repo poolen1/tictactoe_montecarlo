@@ -1,4 +1,5 @@
 import hal
+import copy
 
 
 class Game:
@@ -8,6 +9,7 @@ class Game:
         self.game_state = []
         self.init_board()
         self.computer = None
+        self.solved = False
         self.is_draw = False
 
     def init_board(self):
@@ -17,7 +19,17 @@ class Game:
                 game_row.append('-')
             self.game_state.append(game_row)
 
+    def restart_game(self):
+        self.rows = 3
+        self.cols = 3
+        self.game_state = []
+        self.init_board()
+        self.computer = None
+        self.solved = False
+        self.is_draw = False
+
     def start_game(self):
+        self.restart_game()
         print("Welcome to Tic Tac Toe")
         print("Press 1 to play as x")
         print("Press 2 to play as o")
@@ -51,13 +63,13 @@ class Game:
             valid = self.place_piece(space, piece)
 
         self.print_board()
-        solved = self.is_solved()
+        solved = self.is_solved(piece)
         if solved:
             if self.is_draw:
                 print("Cat's game!")
-                exit()
+                self.start_game()
             print("Player wins!")
-            exit()
+            self.start_game()
 
     # random AI move
     '''
@@ -80,22 +92,28 @@ class Game:
     # Actual AI move
     def ai_move(self, piece):
         valid = False
+        print("computer moving...")
+        # print("self.game_state: ", self.game_state)
+        temp_state = copy.deepcopy(self.game_state)
         while not valid:
-            print("computer moving...")
-            space = self.computer.search(self.game_state, piece)
-            valid = self.place_piece(space, piece)
+            space = self.computer.search(temp_state, piece)
+            print("AI space choice: ", space)
+            valid = self.place_piece(str(space), piece)
+            print("valid: ", valid)
 
         self.print_board()
-        solved = self.is_solved()
+        solved = self.is_solved(piece)
         if solved:
             if self.is_draw:
                 print("Cat's game!")
-                exit()
+                self.start_game()
             print("Computer wins!")
-            exit()
+            self.start_game()
 
     def place_piece(self, move, piece):
         is_valid = True
+        # print("place move: ", move)
+        # print("gamestate: ", self.game_state)
         if move == '1' and self.game_state[2][0] == '-':
             self.game_state[2][0] = piece
         elif move == '2' and self.game_state[2][1] == '-':
@@ -148,51 +166,43 @@ class Game:
         for row in self.game_state:
             print(row)
 
-    def is_solved(self):
+    def is_solved(self, piece):
+        # print("piece: ", piece)
         # Horizontals
         for row in self.game_state:
-            solved = True
-            first = row[0]
-            for col in row:
-                if col != first or first == '-':
-                    solved = False
-                    continue
-
-        if solved:
-            return solved
+            # print("row: ", row)
+            solved = all(element is piece for element in row)
+            if solved:
+                return solved
 
         # Verticals
-        for col in self.game_state:
-            solved = True
-            first = col[0]
-            for row in col:
-                if row != first or first == '-':
-                    solved = False
-                    continue
-
-        if solved:
-            return solved
+        for col in range(3):
+            column = []
+            for row in range(3):
+                column.append(self.game_state[row][col])
+            # print("column: ", column)
+            # print("all: ", all(element is piece for element in column))
+            solved = all(element is piece for element in column)
+            if solved:
+                return solved
 
         # Diagonals
-        first = self.game_state[0][0]
-        if first == self.game_state[1][1] and first == self.game_state[2][2] and first != '-':
-            solved = True
-            return solved
-
-        first = self.game_state[0][2]
-        if first == self.game_state[1][1] and first == self.game_state[0][2] and first != '-':
-            solved = True
-            return solved
-
-        solved = True
-        for row in self.game_state:
-            for col in row:
-                if col is '-':
-                    return False
-
+        diagonal = [self.game_state[0][0], self.game_state[1][1], self.game_state[2][2]]
+        # print("diagonal 1: ", diagonal)
+        solved = all(element is piece for element in diagonal)
         if solved:
-            self.is_draw = True
             return solved
 
-        solved = False
+        diagonal = [self.game_state[2][0], self.game_state[1][1], self.game_state[0][2]]
+        # print("diagonal 2: ", diagonal)
+        solved = all(element is piece for element in diagonal)
+        if solved:
+            return solved
+
+        # Cat's game
+        totaled = not any('-' in sublist for sublist in self.game_state)
+        if totaled:
+            solved = True
+            self.is_draw = True
+
         return solved
